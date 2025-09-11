@@ -1,7 +1,6 @@
 <?php
 
+include "vendor/autoload.php";
 
-// echo "Hello World";
 
-
-echo $_SERVER['REQUEST_URI'];
+new app\Core\Request();
