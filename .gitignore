@@ -2,3 +2,4 @@ vendor
 .idea
 *.json
 *.lock
+.env
