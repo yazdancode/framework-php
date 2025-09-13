@@ -2,6 +2,8 @@
 
 namespace App\Utilities;
 
+use InvalidArgumentException;
+
 class Currency
 {
     const UNIT_RIAL = 'rial';
@@ -25,7 +27,7 @@ class Currency
             case self::UNIT_HEZAR_TOMAN:
                 return $amount / 1000;
             default:
-                throw new \InvalidArgumentException("واحد پولی نامعتبر است");
+                throw new InvalidArgumentException("واحد پولی نامعتبر است");
         }
     }
 }

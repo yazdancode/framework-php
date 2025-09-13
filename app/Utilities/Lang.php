@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Utilities;
+
 class Lang
 {
     public static function persian_numbers($input)
@@ -17,8 +19,6 @@ class Lang
     $latin   = ['0','1','2','3','4','5','6','7','8','9'];
 
     $output = str_replace($persian, $latin, $input);
-    $output = str_replace($arabic, $latin, $output);
-
-    return $output;
+        return str_replace($arabic, $latin, $output);
     }
 }

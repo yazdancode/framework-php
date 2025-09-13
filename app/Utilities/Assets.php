@@ -10,7 +10,7 @@ class Assets
     private static function build(string $type, string $route): string
     {
         $host = rtrim($_ENV['HOST'] ?? '', '/');
-        return "{$host}/assets/{$type}/{$route}";
+        return "$host/assets/$type/$route";
     }
 
     public static function get(string $route): string

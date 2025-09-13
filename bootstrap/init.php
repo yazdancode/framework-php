@@ -1,5 +1,5 @@
 <?php
-define('BASEPATH', __DIR__ . "/../");
+const BASEPATH = __DIR__ . "/../";
 
 require BASEPATH . "vendor/autoload.php";
 
