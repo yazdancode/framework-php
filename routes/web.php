@@ -6,11 +6,11 @@ Route::get('/null', static function() {
     echo 'null page';
 });
 
-Route::add(['get','post'], '/', static function (){
+Route::add(['get','post', 'put'], '/a', static function (){
     echo 'welcome';
 });
 
-Route::add(['post'], '/saveForm', static function () {
+Route::add(['post'], '/b', static function () {
     echo 'save ok';
 });
 $response = [

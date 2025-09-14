@@ -14,7 +14,7 @@ class Request {
 
     public function __construct()
     {
-        $this->method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        $this->method = strtolower($_SERVER['REQUEST_METHOD']);
         $this->agent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
         $this->ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
         $this->uri = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
