@@ -9,7 +9,7 @@ Route::add(['get','post', 'put'], '/a', static function (){
     echo 'welcome';
 });
 
-Route::add(['get','post'], '/b', static function () {
+Route::get( '/b', static function () {
     echo 'save ok';
 });
 $response = [
