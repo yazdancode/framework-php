@@ -20,6 +20,7 @@ class Router
         $this->current_route = $this->findRoute($this->request);
         // Remove var_dump in production - use logging instead
         // var_dump($this->current_route);
+//        var_dump($this->routes);
     }
 
     public function findRoute(Request $request): ?array
