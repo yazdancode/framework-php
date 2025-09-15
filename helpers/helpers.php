@@ -17,8 +17,9 @@ function random_element($arr): string
 }
 
 
-function view($path): void
+function view($path, $data=[]): void
 {
+    extract($data);
     $safe_path = preg_replace('/[^a-zA-Z0-9_.]/', '', $path);
     $view_path = str_replace('.', '/', $safe_path);
     $full_path = BASEPATH . "views/$view_path.php";
