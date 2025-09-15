@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Middleware\Contract;
+namespace App\Middleware\Contract\Contract;
 
 interface MiddlewareInterface
 {

@@ -4,13 +4,16 @@ namespace App\Middleware;
 
 
 use App\Middleware\Contract\Contract\MiddlewareInterface;
+use JetBrains\PhpStorm\NoReturn;
 
-class BlockIE implements MiddlewareInterface
+class BlockOpera implements MiddlewareInterface
 {
+
+    #[NoReturn]
     public function handle(): void
     {
         global $request;
-        die("BlockIE");
+        die("BlockOpera");
 
     }
 
