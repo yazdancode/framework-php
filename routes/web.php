@@ -1,12 +1,14 @@
 <?php
 use App\Core\Routing\Route;
+use App\Middleware\BlockChrome;
 use App\Middleware\BlockFirefox;
 use App\Middleware\BlockIE;
 use App\Middleware\BlockOpera;
 
 // ثبت route ها
 Route::get('/', 'HomeController@index');
-Route::get('/todo/list', 'TodoController@list', [BlockFirefox::class, BlockIE::class,BlockOpera::class]);
+Route::get('/todo/list', 'TodoController@list', [BlockFirefox::class, BlockIE::class,
+    BlockOpera::class, BlockChrome::class]);
 Route::get('/todo/add', 'TodoController@add');
 Route::get('/todo/remove', 'TodoController@remove');
 
