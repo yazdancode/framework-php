@@ -2,17 +2,18 @@
 
 namespace App\Middleware;
 
-
-use App\Middleware\Contract\Contract\MiddlewareInterface;
+use App\Middleware\Contract\MiddlewareInterface;
+use JetBrains\PhpStorm\NoReturn;
 
 class BlockIE implements MiddlewareInterface
 {
+    #[NoReturn]
     public function handle(): void
     {
-        global $request;
-        die("BlockIE");
-
+        $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        if (stripos($ua, 'MSIE') !== false || stripos($ua, 'Trident') !== false) {
+            header('HTTP/1.1 403 Forbidden');
+            exit('دسترسی با مرورگر Internet Explorer مسدود است.');
+        }
     }
-
-
 }

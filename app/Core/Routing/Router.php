@@ -11,16 +11,71 @@ class Router
 {
     private Request $request;
     private array $routes;
-    private mixed $current_route;
+    private ?array $current_route;
 
     public function __construct()
     {
         $this->request = new Request();
         $this->routes = Route::routes();
         $this->current_route = $this->findRoute($this->request);
-        // Remove var_dump in production - use logging instead
-        // var_dump($this->current_route);
-//        var_dump($this->routes);
+    }
+
+    public function run(): void
+    {
+        if (!$this->current_route) {
+            $this->dispatch404();
+        }
+
+        $requestMethod = strtoupper($this->request->method());
+        $routeMethods = array_map('strtoupper', $this->current_route['methods']);
+
+        if (!in_array($requestMethod, $routeMethods, true)) {
+            $this->dispatch405();
+        }
+
+        $this->runRouteMiddleware();
+
+        $action = $this->current_route['action'] ?? null;
+
+        if (is_null($action) || empty($action)) {
+            return;
+        }
+
+        if ($action instanceof Closure) {
+            echo $action($this->request);
+            return;
+        }
+
+        if (is_string($action)) {
+            $this->handleStringAction($action);
+            return;
+        }
+
+        if (is_array($action) && count($action) === 2) {
+            $this->handleArrayAction($action);
+            return;
+        }
+
+        throw new RuntimeException("Invalid action type for route.");
+    }
+
+    private function runRouteMiddleware(): void
+    {
+        $middleware = $this->current_route['middleware'] ?? [];
+
+        foreach ($middleware as $middleware_class) {
+            if (!class_exists($middleware_class)) {
+                throw new RuntimeException("Middleware class '$middleware_class' not found.");
+            }
+
+            $middleware_object = new $middleware_class;
+
+            if (!method_exists($middleware_object, 'handle')) {
+                throw new RuntimeException("Middleware '$middleware_class' must implement a handle() method.");
+            }
+
+            $middleware_object->handle();
+        }
     }
 
     public function findRoute(Request $request): ?array
@@ -31,24 +86,22 @@ class Router
         foreach ($this->routes as $route) {
             $routeMethods = array_map('strtoupper', $route['methods']);
             $routeUri = trim($route['uri'], '/');
-            if (in_array($requestMethod, $routeMethods, true) && $this->matchUriPattern($requestUri, $routeUri)) {
+
+            if (in_array($requestMethod, $routeMethods, true) &&
+                $this->matchUriPattern($requestUri, $routeUri)) {
                 return $route;
             }
         }
+
         return null;
     }
 
-    /**
-     * Match URI pattern with support for route parameters
-     */
     private function matchUriPattern(string $requestUri, string $routeUri): bool
     {
-        // Exact match
         if ($requestUri === $routeUri) {
             return true;
         }
 
-        // Convert route pattern to regex for parameter matching
         $pattern = preg_replace('/\{(\w+)}/', '(?P<$1>[^/]+)', $routeUri);
         $pattern = "#^$pattern$#";
 
@@ -71,44 +124,6 @@ class Router
         exit;
     }
 
-    public function run(): void
-    {
-        if (!$this->current_route) {
-            $this->dispatch404();
-        }
-
-        $requestMethod = strtoupper($this->request->method());
-        $routeMethods = array_map('strtoupper', $this->current_route['methods']);
-
-        if (!in_array($requestMethod, $routeMethods, true)) {
-            $this->dispatch405();
-        }
-
-        $action = $this->current_route['action'] ?? null;
-
-        if (is_null($action) || empty($action)) {
-            return;
-        }
-        if ($action instanceof Closure) {
-            echo $action($this->request);
-            return;
-        }
-
-        // Handle string actions (Controller@method)
-        if (is_string($action)) {
-            $this->handleStringAction($action);
-            return;
-        }
-
-        // Handle array actions [Controller, method]
-        if (is_array($action) && count($action) === 2) {
-            $this->handleArrayAction($action);
-            return;
-        }
-
-        throw new RuntimeException("Invalid action type for route.");
-    }
-
     private function handleStringAction(string $action): void
     {
         if (!str_contains($action, '@')) {
@@ -125,7 +140,6 @@ class Router
     {
         [$controllerClass, $method] = $action;
 
-        // If controller is provided as string without namespace
         if (is_string($controllerClass) && !class_exists($controllerClass)) {
             $controllerClass = "\\App\\Controllers\\$controllerClass";
         }
@@ -145,7 +159,6 @@ class Router
 
         $controller = new $controllerClass();
 
-        // Check if method is callable
         if (!is_callable([$controller, $method])) {
             throw new RuntimeException("Method '$method' in controller '$controllerClass' is not callable.");
         }

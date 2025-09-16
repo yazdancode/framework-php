@@ -1,18 +1,18 @@
 <?php
 
 namespace App\Middleware;
+use App\Middleware\Contract\MiddlewareInterface;
 
 
-use App\Middleware\Contract\Contract\MiddlewareInterface;
 
 class BlockFirefox implements MiddlewareInterface
 {
     public function handle(): void
     {
-        global $request;
-        die("BlockFirefox");
-
+        $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        if (stripos($ua, 'Firefox') !== false) {
+            header('HTTP/1.1 403 Forbidden');
+            exit('Access denied: Firefox is not supported.');
+        }
     }
-
-
 }
