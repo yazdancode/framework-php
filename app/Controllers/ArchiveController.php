@@ -2,23 +2,25 @@
 
 namespace App\Controllers;
 
+use Yazdan\Helpers\ViewHelper;
+
 class ArchiveController
 {
     public function index(): void
     {
-        view("archive.index");
+        ViewHelper::view("archive.index");
 
     }
 
     public function products()
     {
-        view("archive.products");
+        ViewHelper::view("archive.products");
 
     }
 
     public function articles()
     {
-        view("archive.articles");
+        ViewHelper::view("archive.articles");
 
     }
 

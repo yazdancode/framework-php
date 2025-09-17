@@ -1,3 +1,8 @@
+<?php
+
+use Yazdan\Helpers\UrlHelper;
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +12,8 @@
         $title
         ?>
     </title>
-    <link rel="stylesheet" href="<?php echo assets_url('css/todo-list.css')?>">
+    <?php $result = UrlHelper::assetsUrl('css/todo-list.css');?>
+    <link rel="stylesheet" href="<?= $result ?>">
 </head>
 <body>
 <svg viewBox="0 0 0 0" style="position: absolute; z-index: -1; opacity: 0;">
@@ -51,6 +57,7 @@
     endforeach;
     ?>
 </div>
-<script src="<?php echo assets_url('js/todo-list.js')?>"></script>
+<?php $result = UrlHelper::assetsUrl('js/todo-list.js');?>
+<script src="<?= $result ?>"></script>
 </body>
 </html>

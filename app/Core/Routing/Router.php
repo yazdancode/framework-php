@@ -6,6 +6,7 @@ use App\Core\Request;
 use Closure;
 use JetBrains\PhpStorm\NoReturn;
 use RuntimeException;
+use Yazdan\Helpers\ViewHelper;
 
 class Router
 {
@@ -112,7 +113,7 @@ class Router
     public function dispatch404(): void
     {
         header('HTTP/1.0 404 Not Found');
-        view('errors.404');
+        ViewHelper::view('errors.404');
         exit;
     }
 
@@ -120,7 +121,7 @@ class Router
     public function dispatch405(): void
     {
         header('HTTP/1.1 405 Method Not Allowed');
-        view('errors.405');
+        ViewHelper::view('errors.405');
         exit;
     }
 

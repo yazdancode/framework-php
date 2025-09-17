@@ -2,21 +2,23 @@
 
 namespace App\Controllers;
 
+use Yazdan\Helpers\ViewHelper;
+
 class TodoController
 {
     public function list(): void
     {
-        view('todo.list', $this->getTaskListData());
+        ViewHelper::view('todo.list', $this->getTaskListData());
     }
 
     public function add(): void
     {
-        view('todo.add');
+        ViewHelper::view('todo.add');
     }
 
     public function remove(): void
     {
-        view('todo.remove');
+        ViewHelper::view('todo.remove');
     }
 
     private function getTaskListData(): array

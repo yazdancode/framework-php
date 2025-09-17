@@ -2,6 +2,8 @@
 
 namespace App\Core;
 
+use Yazdan\Helpers\UrlHelper;
+
 class Request {
     private $params;
     private $method;
@@ -85,7 +87,7 @@ class Request {
 
     public function redirect($route)
     {
-        header("Location: " . site_url($route));
+        header("Location: " . UrlHelper::siteUrl($route));
         exit;
     }
 
