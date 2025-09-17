@@ -2,6 +2,8 @@
 
 namespace Yazdan\Helpers;
 
+use JetBrains\PhpStorm\NoReturn;
+
 class DebugHelper
 {
     public static function niceDump(mixed $var): void
@@ -11,6 +13,7 @@ class DebugHelper
         echo "</pre>";
     }
 
+    #[NoReturn]
     public static function niceDd(mixed $var): void
     {
         self::niceDump($var);

@@ -10,7 +10,7 @@ Route::get('/', 'HomeController@index');
 Route::get('/todo/list', 'TodoController@list', [BlockFirefox::class, BlockIE::class,
     BlockOpera::class, BlockChrome::class]);
 
-Route::get('/post?id=12', 'PostController@single');
+Route::get('/post/{slug}', 'PostController@single');
 
 
 Route::get('/todo/add', 'TodoController@add');
