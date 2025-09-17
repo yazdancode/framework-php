@@ -9,6 +9,8 @@ use App\Middleware\BlockOpera;
 Route::get('/', 'HomeController@index');
 Route::get('/todo/list', 'TodoController@list', [BlockFirefox::class, BlockIE::class,
     BlockOpera::class, BlockChrome::class]);
+
+Route::get('/post', 'PostController@single');
 Route::get('/todo/add', 'TodoController@add');
 Route::get('/todo/remove', 'TodoController@remove');
 
