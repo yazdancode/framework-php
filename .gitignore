@@ -3,3 +3,5 @@ vendor
 *.json
 *.lock
 .env
+
+test/
