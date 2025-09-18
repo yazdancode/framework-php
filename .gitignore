@@ -3,5 +3,7 @@ vendor
 *.json
 *.lock
 .env
-
-test/
+*.xml
+tests/
+*.cache
+*.bak
