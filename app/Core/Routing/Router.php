@@ -5,6 +5,8 @@ namespace App\Core\Routing;
 use App\Core\Request;
 use Closure;
 use JetBrains\PhpStorm\NoReturn;
+use ReflectionException;
+use ReflectionMethod;
 use RuntimeException;
 use Yazdan\Helpers\ViewHelper;
 
@@ -13,6 +15,7 @@ class Router
     private Request $request;
     private array $routes;
     private ?array $current_route;
+    private array $route_params = [];
 
     public function __construct()
     {
@@ -23,7 +26,7 @@ class Router
 
     public function run(): void
     {
-        if (!$this->current_route) {
+        if (is_null($this->current_route)) {
             $this->dispatch404();
         }
 
@@ -38,12 +41,14 @@ class Router
 
         $action = $this->current_route['action'] ?? null;
 
-        if (is_null($action) || empty($action)) {
-            return;
+        if (is_null($action) || (is_string($action) && empty($action))) {
+            throw new RuntimeException("Route action is not defined for " . ($this->current_route['uri'] ?? 'unknown route'));
         }
 
+        $this->request->setRouteParams($this->route_params);
+
         if ($action instanceof Closure) {
-            echo $action($this->request);
+            echo $action($this->request, ...array_values($this->route_params));
             return;
         }
 
@@ -75,45 +80,78 @@ class Router
                 throw new RuntimeException("Middleware '$middleware_class' must implement a handle() method.");
             }
 
-            $middleware_object->handle();
+            $response = $middleware_object->handle($this->request, $this->route_params);
+            if ($response !== null) {
+                echo $response;
+                exit;
+            }
         }
     }
 
     public function findRoute(Request $request): ?array
     {
-        $requestMethod = strtoupper($request->method());
         $requestUri = trim($request->uri(), '/');
+        $requestMethod = strtoupper($request->method());
 
         foreach ($this->routes as $route) {
-            $routeMethods = array_map('strtoupper', $route['methods']);
             $routeUri = trim($route['uri'], '/');
+            $patternAndParamNames = $this->generateRegexAndParamNames($routeUri);
+            $regexPattern = "/^" . $patternAndParamNames['pattern'] . "$/";
 
-            if (in_array($requestMethod, $routeMethods, true) &&
-                $this->matchUriPattern($requestUri, $routeUri)) {
-                return $route;
+            $paramNames = $patternAndParamNames['param_names'];
+
+            if (preg_match($regexPattern, $requestUri, $matches)) {
+                $this->route_params = [];
+
+                foreach ($paramNames as $index => $name) {
+                    if (isset($matches[$index + 1])) {
+                        $this->route_params[$name] = $matches[$index + 1];
+                    }
+                }
+
+                $routeMethods = array_map('strtoupper', $route['methods']);
+
+                if (in_array($requestMethod, $routeMethods, true)) {
+                    return $route;
+                }
             }
         }
 
         return null;
     }
 
-    private function matchUriPattern(string $requestUri, string $routeUri): bool
+    private function generateRegexAndParamNames(string $routeUri): array
     {
-        if ($requestUri === $routeUri) {
-            return true;
-        }
+        $paramNames = [];
 
-        $pattern = preg_replace('/\{(\w+)}/', '(?P<$1>[^/]+)', $routeUri);
-        $pattern = "#^$pattern$#";
+        $pattern = preg_replace_callback('/\{([a-zA-Z0-9_]+)}/', static function ($matches) use (&$paramNames) {
+            $paramName = $matches[1];
+            $paramNames[] = $paramName;
 
-        return (bool) preg_match($pattern, $requestUri);
+            if ($paramName === 'id') {
+                return '(\d+)';
+            }
+
+            return '([^/]+)';
+        }, $routeUri);
+
+        $pattern = str_replace('/', '\/', $pattern);
+
+        return [
+            'pattern' => $pattern,
+            'param_names' => $paramNames
+        ];
     }
 
     #[NoReturn]
     public function dispatch404(): void
     {
         header('HTTP/1.0 404 Not Found');
-        ViewHelper::view('errors.404');
+        if ($this->request->wantsJson()) {
+            echo json_encode(['error' => 'Not Found'], JSON_UNESCAPED_UNICODE);
+        } else {
+            ViewHelper::view('errors.404');
+        }
         exit;
     }
 
@@ -121,7 +159,11 @@ class Router
     public function dispatch405(): void
     {
         header('HTTP/1.1 405 Method Not Allowed');
-        ViewHelper::view('errors.405');
+        if ($this->request->wantsJson()) {
+            echo json_encode(['error' => 'Method Not Allowed'], JSON_UNESCAPED_UNICODE);
+        } else {
+            ViewHelper::view('errors.405');
+        }
         exit;
     }
 
@@ -164,6 +206,39 @@ class Router
             throw new RuntimeException("Method '$method' in controller '$controllerClass' is not callable.");
         }
 
-        echo $controller->$method($this->request);
+        try {
+            $reflectionMethod = new ReflectionMethod($controller, $method);
+        } catch (ReflectionException $e) {
+            throw new RuntimeException("Error in reflecting method '$method' of '$controllerClass'", 0, $e);
+        }
+
+        $parameters = $reflectionMethod->getParameters();
+        $args = [];
+
+        foreach ($parameters as $param) {
+            $paramName = $param->getName();
+            $paramType = $param->getType();
+
+            if ($paramType && $paramType->getName() === Request::class) {
+                $args[] = $this->request;
+            } elseif (isset($this->route_params[$paramName])) {
+                $value = $this->route_params[$paramName];
+                if ($paramType && $paramType->isBuiltin()) {
+                    switch ($paramType->getName()) {
+                        case 'int': $value = (int) $value; break;
+                        case 'float': $value = (float) $value; break;
+                        case 'bool': $value = (bool) $value; break;
+                        default: break;
+                    }
+                }
+                $args[] = $value;
+            } elseif ($param->isDefaultValueAvailable()) {
+                $args[] = $param->getDefaultValue();
+            } else {
+                throw new RuntimeException("Cannot resolve parameter '$paramName' for controller method '$controllerClass::$method'.");
+            }
+        }
+
+        echo call_user_func_array([$controller, $method], $args);
     }
 }

@@ -11,6 +11,7 @@ class DebugHelper
         echo "<pre style='display:block; text-align:left; background:#f9f9f9; padding:10px; border:1px solid #ccc;'>";
         var_dump($var);
         echo "</pre>";
+
     }
 
     #[NoReturn]

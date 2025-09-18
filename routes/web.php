@@ -5,12 +5,13 @@ use App\Middleware\BlockFirefox;
 use App\Middleware\BlockIE;
 use App\Middleware\BlockOpera;
 
-// ثبت route ها
+
 Route::get('/', 'HomeController@index');
 Route::get('/todo/list', 'TodoController@list', [BlockFirefox::class, BlockIE::class,
     BlockOpera::class, BlockChrome::class]);
 
 Route::get('/post/{slug}', 'PostController@single');
+Route::get('/post/{slug}/comment/{comment_id}', 'PostController@comment');
 
 
 Route::get('/todo/add', 'TodoController@add');

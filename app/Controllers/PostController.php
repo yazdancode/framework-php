@@ -1,12 +1,22 @@
 <?php
 
 namespace App\Controllers;
-use Yazdan\Helpers\DebugHelper;
+
+use App\Core\Request;
 
 class PostController
 {
-    public function single(): void
+    public function single(Request $request): void
     {
-        DebugHelper::niceDump($_GET);
+        $slug = $request->route('slug');
+
+        echo "slug: {$slug}";
+    }
+    public function comment(Request $request): void
+    {
+        $slug = $request->route('slug');
+        $cid  = $request->route('comment_id');
+
+        echo "slug: {$slug}<br>comment_id: {$cid}";
     }
 }
