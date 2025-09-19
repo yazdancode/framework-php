@@ -37,7 +37,11 @@ class JsonBaseModel extends BaseModel
 
     private function writeJson(string $path, array $data): void
     {
-        $json = json_encode($data, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
+        try {
+            $json = json_encode($data, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
+        } catch (JsonException) {
+
+        }
         if (file_put_contents($path, $json) === false) {
             throw new RuntimeException("Failed to write to file: $path");
         }
@@ -46,7 +50,9 @@ class JsonBaseModel extends BaseModel
     private function readJson(): array
     {
         $path = $this->getFilePath();
-        if (!file_exists($path)) return [];
+        if (!file_exists($path)) {
+            return [];
+        }
 
         try {
             $json = file_get_contents($path);
@@ -62,7 +68,9 @@ class JsonBaseModel extends BaseModel
     public function create(array $data): int
     {
         $path = $this->getFilePath();
-        if (!is_dir($this->db_folder)) mkdir($this->db_folder, 0777, true);
+        if (!is_dir($this->db_folder)) {
+            mkdir($this->db_folder, 0777, true);
+        }
 
         $table_data = $this->readJson();
         $table_data[] = $data;
@@ -70,7 +78,7 @@ class JsonBaseModel extends BaseModel
         try {
             $this->writeJson($path, $table_data);
             return 1;
-        } catch (JsonException | RuntimeException) {
+        } catch (RuntimeException) {
             return 0;
         }
     }
@@ -88,18 +96,55 @@ class JsonBaseModel extends BaseModel
         return $this->readJson();
     }
 
+    public function get(array $columns, array $where): object
+    {
+        $results = $this->filterData($columns, $where);
+        return !empty($results) ? (object)$results[0] : (object)[];
+    }
+
+    public function getAll(array $columns, array $where): array
+    {
+        return $this->filterData($columns, $where);
+    }
+
+    private function filterData(array $columns, array $where): array
+    {
+        $data = $this->readJson();
+
+        // Apply where filters
+        $filtered = array_filter($data, static function ($item) use ($where) {
+            if (array_any($where, static fn($value, $key) => !isset($item[$key]) || $item[$key] != $value)) {
+                return false;
+            }
+            return true;
+        });
+
+        // Select columns
+        if ($columns !== ['*']) {
+            $filtered = array_map(static function ($item) use ($columns) {
+                return array_intersect_key($item, array_flip($columns));
+            }, $filtered);
+        }
+
+        return array_values($filtered);
+    }
+
+
+
     // Update
     public function update(int $id, array $data): bool
     {
         $table_data = $this->readJson();
-        if (!isset($table_data[$id])) return false;
+        if (!isset($table_data[$id])) {
+            return false;
+        }
 
         $table_data[$id] = array_merge($table_data[$id], $data);
 
         try {
             $this->writeJson($this->getFilePath(), $table_data);
             return true;
-        } catch (JsonException | RuntimeException) {
+        } catch (RuntimeException) {
             return false;
         }
     }
@@ -108,7 +153,9 @@ class JsonBaseModel extends BaseModel
     public function delete(int $id): bool
     {
         $table_data = $this->readJson();
-        if (!isset($table_data[$id])) return false;
+        if (!isset($table_data[$id])) {
+            return false;
+        }
 
         unset($table_data[$id]);
         $table_data = array_values($table_data); // reindex
@@ -116,7 +163,7 @@ class JsonBaseModel extends BaseModel
         try {
             $this->writeJson($this->getFilePath(), $table_data);
             return true;
-        } catch (JsonException | RuntimeException) {
+        } catch (RuntimeException) {
             return false;
         }
     }
