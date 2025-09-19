@@ -2,6 +2,7 @@
 
 namespace App\Models\Contracts;
 
+use JsonException;
 use RuntimeException;
 
 class JsonBaseModel extends BaseModel
@@ -25,93 +26,98 @@ class JsonBaseModel extends BaseModel
         return $this->table;
     }
 
-    // Create (Insert)
-    public function create(array $data): int
+    public function getFilePath(): string
     {
-        /**
-         * TODO: Unit tests for JsonBaseModel::create()
-         *
-         * ✅ File mocking and path validation
-         * - [*] Mock file_get_contents to simulate reading from a JSON file
-         * - [ ] Verify that the file path is correctly constructed using db_folder and table
-         *
-         * ✅ Data decoding and structure
-         * - [ ] Ensure json_decode returns the expected array structure
-         * - [ ] Handle cases where json_decode returns null or stdClass
-         *
-         * ✅ Return value and basic behavior
-         * - [ ] Confirm that the method returns an integer (e.g., 1)
-         * - [ ] Verify that the new data is appended correctly to the existing array
-         *
-         * ✅ Input variations
-         * - [ ] Test with simple associative arrays
-         * - [ ] Test with nested arrays and special characters
-         * - [ ] Test with empty arrays and edge cases
-         *
-         * ✅ File state scenarios
-         * - [ ] Handle case where the file is missing (should create a new file)
-         * - [ ] Handle case where the file is empty
-         * - [ ] Handle case where the file contains invalid JSON
-         *
-         * ✅ Error simulation
-         * - [ ] Simulate file read errors and verify fallback behavior
-         * - [ ] Simulate file write errors and ensure graceful failure or exception
-         *
-         * ✅ Repeatability and consistency
-         * - [ ] Test repeated calls to ensure consistent behavior
-         * - [ ] Verify that multiple inserts preserve data order and integrity
-         */
-        // ساخت مسیر فایل
-        $table_filepath = $this->db_folder . $this->table . '.json';
-
-        // اگر پوشه وجود نداره، بسازش
-        if (!is_dir($this->db_folder) && !mkdir($concurrentDirectory = $this->db_folder, 0777, true) && !is_dir($concurrentDirectory)) {
-            throw new RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
+        $tableName = $this->table;
+        if (!str_ends_with($tableName, '.json')) {
+            $tableName .= '.json';
         }
-
-        // خواندن فایل JSON (اگر وجود داشته باشه)
-        $json = @file_get_contents($table_filepath);
-        $table_data = [];
-
-        if ($json !== false) {
-            $decoded = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
-            if (is_array($decoded)) {
-                $table_data = $decoded;
-            }
-        }
-
-        // افزودن داده جدید به آرایه
-        $table_data[] = $data;
-
-        // ذخیره‌سازی مجدد در فایل
-        $new_json = json_encode($table_data, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
-        file_put_contents($table_filepath, $new_json);
-
-        // بازگرداندن عدد (مثلاً شناسه یا تأیید موفقیت)
-        return 1;
+        return $this->db_folder . $tableName;
     }
 
-    // Read (Select) single
+    private function writeJson(string $path, array $data): void
+    {
+        $json = json_encode($data, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
+        if (file_put_contents($path, $json) === false) {
+            throw new RuntimeException("Failed to write to file: $path");
+        }
+    }
+
+    private function readJson(): array
+    {
+        $path = $this->getFilePath();
+        if (!file_exists($path)) return [];
+
+        try {
+            $json = file_get_contents($path);
+            return $json && trim($json) !== ''
+                ? json_decode($json, true, 512, JSON_THROW_ON_ERROR)
+                : [];
+        } catch (JsonException | RuntimeException) {
+            return [];
+        }
+    }
+
+    // Create
+    public function create(array $data): int
+    {
+        $path = $this->getFilePath();
+        if (!is_dir($this->db_folder)) mkdir($this->db_folder, 0777, true);
+
+        $table_data = $this->readJson();
+        $table_data[] = $data;
+
+        try {
+            $this->writeJson($path, $table_data);
+            return 1;
+        } catch (JsonException | RuntimeException) {
+            return 0;
+        }
+    }
+
+    // Read single
     public function read(int $id): object
     {
-        return (object)[];
+        $data = $this->readJson();
+        return isset($data[$id]) ? (object)$data[$id] : (object)[];
     }
 
     // Read all
     public function readAll(array $columns = ['*'], array $where = []): array
     {
-        return [];
+        return $this->readJson();
     }
 
-    // Update record
+    // Update
     public function update(int $id, array $data): bool
     {
-        return true;
+        $table_data = $this->readJson();
+        if (!isset($table_data[$id])) return false;
+
+        $table_data[$id] = array_merge($table_data[$id], $data);
+
+        try {
+            $this->writeJson($this->getFilePath(), $table_data);
+            return true;
+        } catch (JsonException | RuntimeException) {
+            return false;
+        }
     }
 
-    // Delete record
+    // Delete
     public function delete(int $id): bool
     {
-        return true;
+        $table_data = $this->readJson();
+        if (!isset($table_data[$id])) return false;
+
+        unset($table_data[$id]);
+        $table_data = array_values($table_data); // reindex
+
+        try {
+            $this->writeJson($this->getFilePath(), $table_data);
+            return true;
+        } catch (JsonException | RuntimeException) {
+            return false;
+        }
     }
 }
