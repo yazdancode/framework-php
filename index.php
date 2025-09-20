@@ -13,7 +13,3 @@ $db = new Medoo([
     'password' => '',
     'charset' => 'utf8mb4'
 ]);
-
-$userModel = new User($db);
-$result = $userModel->get(["name", 'email'],[]);
-var_dump($result);

@@ -29,7 +29,7 @@ class MysqlBaseModel
         return is_array($data) ? (object)$data : (object)[];
     }
 
-    /** خواندن چند رکورد */
+    /** خواندن چند رکورد */ 
     public function readAll(array $columns = ['*'], array $where = []): array
     {
         $cols = $columns === ['*'] ? '*' : $columns;
@@ -49,4 +49,17 @@ class MysqlBaseModel
         $result = $this->db->delete($this->table, [$this->primaryKey => $id]);
         return $result !== null && $result->rowCount() > 0;
     }
+
+    public function count(array $where= [])
+    {
+        return (int)$this->db->count($this->table, $where);
+    }
+
+    public function sum(array $column, array $where = [])
+    {
+        return (float)$this->db->sum($this->table, $column, $where);
+
+    }
+
+
 }
