@@ -1,55 +1,52 @@
 <?php
 
 namespace App\Models\Contracts;
+
 use Medoo\Medoo;
 
-class MysqlBaseModel extends BaseModel
+class MysqlBaseModel
 {
     protected Medoo $db;
+    protected string $table = '';
+    protected string $primaryKey = 'id';
+
     public function __construct(Medoo $db)
     {
-        parent::__construct();
         $this->db = $db;
     }
 
+    /** ایجاد رکورد جدید */
     public function create(array $data): int
     {
         $this->db->insert($this->table, $data);
-
         return (int)$this->db->id();
     }
 
+    /** خواندن یک رکورد با ID */
     public function read(int $id): object
     {
         $data = $this->db->get($this->table, '*', [$this->primaryKey => $id]);
-        return $data ? (object)$data : (object)[];
+        return is_array($data) ? (object)$data : (object)[];
     }
 
+    /** خواندن چند رکورد */
     public function readAll(array $columns = ['*'], array $where = []): array
     {
         $cols = $columns === ['*'] ? '*' : $columns;
-        return $this->db->select($this->table, $cols, $where);
+        return $this->db->select($this->table, $cols, $where) ?: [];
     }
 
-
+    /** بروزرسانی رکورد */
     public function update(int $id, array $data): bool
     {
-        $where = [$this->primaryKey => $id];
-
-        $result = $this->db->update($this->table, $data, $where);
-
-        return $result?->rowCount() > 0;
+        $result = $this->db->update($this->table, $data, [$this->primaryKey => $id]);
+        return $result !== null && $result->rowCount() > 0;
     }
 
-
+    /** حذف رکورد */
     public function delete(int $id): bool
     {
-        $where = [$this->primaryKey => $id];
-        $result = $this->db->delete($this->table, $where);
-        if ($result === null) {
-            return false;
-        }
-        return $result->rowCount() > 0;
+        $result = $this->db->delete($this->table, [$this->primaryKey => $id]);
+        return $result !== null && $result->rowCount() > 0;
     }
-
 }
