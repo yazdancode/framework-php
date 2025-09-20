@@ -2,9 +2,13 @@
 
 namespace App\Models\Contracts;
 
+use PDO;
+use PDOException;
+use RuntimeException;
+
 abstract class BaseModel implements CrudInterface
 {
-    protected \PDO $connection;
+    protected PDO $connection;
     protected string $table;
     protected string $primaryKey = 'id';
     protected int $pageSize = 10;
@@ -13,22 +17,22 @@ abstract class BaseModel implements CrudInterface
     protected function __construct()
     {
         try {
-            $host = "127.0.0.1";
-            $db   = "my_database";
-            $user = "root";
-            $pass = "secret";
+            $host = $_ENV['DB_HOST'];
+            $db   = $_ENV['DB_NAME'];
+            $user = $_ENV['DB_USER'];
+            $pass = $_ENV['DB_PASS'];
             $charset = "utf8mb4";
 
             $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
             $options = [
-                \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
-                \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_OBJ,
-                \PDO::ATTR_EMULATE_PREPARES   => false,
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
+                PDO::ATTR_EMULATE_PREPARES   => false,
             ];
 
-            $this->connection = new \PDO($dsn, $user, $pass, $options);
-        } catch (\PDOException $e) {
-            throw new \RuntimeException("Database connection failed: " . $e->getMessage());
+            $this->connection = new PDO($dsn, $user, $pass, $options);
+        } catch (PDOException $e) {
+            throw new RuntimeException("Database connection failed: " . $e->getMessage());
         }
     }
 

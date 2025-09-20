@@ -3,12 +3,10 @@
 
 namespace App\Models;
 
-use App\Models\Contracts\JsonBaseModel;
+use App\Models\Contracts\MysqlBaseModel;
 
-class User extends JsonBaseModel
+class User extends MysqlBaseModel
 {
-    #todo: should file test with User inside file tests create UserjsonTest.php The test should be related.
-
     public string $table = 'users'; #title persian users
 
 }
