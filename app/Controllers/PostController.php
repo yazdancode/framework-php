@@ -3,13 +3,13 @@
 namespace App\Controllers;
 
 use App\Core\Request;
+use App\Models\User;
 
 class PostController
 {
     public function single(Request $request): void
     {
         $slug = $request->route('slug');
-
         echo "slug: {$slug}";
     }
     public function comment(Request $request): void
